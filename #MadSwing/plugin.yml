@@ -1,0 +1,8 @@
+name: MadSwing
+version: 1
+main: Tungsten\MadSwing\MadSwing
+api: 3.0.0
+author: TungstenVn
+commands:
+ test:
+  description: "Swing"
