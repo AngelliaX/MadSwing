@@ -28,7 +28,16 @@ use pocketmine\network\mcpe\protocol\PlayerInputPacket;
 use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\network\mcpe\protocol\InteractPacket;
 use pocketmine\network\mcpe\protocol\PlayerActionPacket;
-class MadSwing extends PluginBase implements Listener{
+
+use  pocketmine\nbt\JsonNbtParser;
+
+use pocketmine\nbt\NBT;
+use pocketmine\nbt\tag\ByteArrayTag;
+use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\nbt\tag\IntTag;
+use pocketmine\nbt\tag\ListTag;
+use pocketmine\nbt\tag\StringTag;
+class MadSwing extends PluginBase implements Listener {
 
 
 	public function onEnable(){
@@ -41,10 +50,9 @@ class MadSwing extends PluginBase implements Listener{
 	public function onCommand(CommandSender $sender, Command $command, String $label, array $args) : bool {
        
 		switch(strtolower($command->getName())){
-            case "test":
-               var_dump("1");
-               #$this->command($sender);
-               $this->knot($sender);
+            case "test":      
+               $this->command($sender);
+               #$this->knot($sender);
                break;
         }
 
@@ -64,9 +72,12 @@ class MadSwing extends PluginBase implements Listener{
 		}
 	}
 	public function onTapEntity(EntityDamageByEntityEvent $event){
-		var_dump($event->getEntity()->getId());
+		#var_dump($event->getEntity()->getName());
 		if(!$event->getDamager() instanceof Player){
 			return;
+		}
+		if($event->getEntity()->getName() == "Chair"){
+			$event->setCancelled();
 		}
 		$this->setSitting($event->getDamager(), $event->getEntity(), $event->getEntity()->getId());
         $event->getDamager()->sendTip("sit rn 2");
@@ -96,32 +107,17 @@ class MadSwing extends PluginBase implements Listener{
     }
 
 	public function command($sender){
-	    $skin = $sender->getSkin();
-		$path = "MadSwing.png";
-		$img = @imagecreatefrompng($path);
-		$skinbytes = "";
-		$s = (int)@getimagesize($path)[1];
-		for($y = 0; $y < 64; $y++){
-			for($x = 0; $x < 64; $x++){
-				$colorat = @imagecolorat($img, $x, $y);
-				$a = ((~((int)($colorat >> 24))) << 1) & 0xff;
-				$r = ($colorat >> 16) & 0xff;
-				$g = ($colorat >> 8) & 0xff;
-				$b = $colorat & 0xff;
-				$skinbytes .= chr($r) . chr($g) . chr($b) . chr($a);
-			}
-		}
-		@imagedestroy($img);  
-	  
-	   $player = $sender;
-	   $nbt = Entity::createBaseNBT($sender); 
-	   $skinTag = $sender->namedtag->getCompoundTag("Skin");
-       assert($skinTag !== null);
-       $nbt->setTag(clone $skinTag);
-	   $npc = Entity::createEntity("Chair",$sender->getLevel(),$nbt);
-	   $npc->setSkin(new Skin("nothing", $skinbytes, "", "geometry.madswing", file_get_contents("MadSwing.json")));
-       $npc->sendSkin();
-       //$npc->setScale(0.5);	   
+	   $skintag = new CompoundTag("Skin", [
+			    new StringTag("Name", "j khong duoc"),
+				new ByteArrayTag("Data", file_get_contents("MadSwingPNG.json")),
+				new ByteArrayTag("CapeData", ""),
+				new StringTag("GeometryName", "geometry.madswing"),
+				new ByteArrayTag("GeometryData", file_get_contents("MadSwing.json"))
+			  ]);
+	   $nbt = Entity::createBaseNBT($sender);
+       $nbt->setTag(clone $skintag);
+
+	   $npc = Entity::createEntity("Chair",$sender->getLevel(),$nbt);   	   
        $npc->spawnToAll();
 	}
 }
